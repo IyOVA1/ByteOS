@@ -23,3 +23,21 @@ self.addEventListener('fetch', (event) => {
         })
     );
 });
+// ByteOS Logic - Add this to the bottom of your existing file
+self.addEventListener('fetch', (event) => {
+    // We only want to intercept if the request is for an external site
+    if (event.request.url.startsWith('http')) {
+        event.respondWith(
+            fetch(event.request).then((response) => {
+                const newHeaders = new Headers(response.headers);
+                newHeaders.delete('X-Frame-Options');
+                newHeaders.delete('Content-Security-Policy');
+                return new Response(response.body, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: newHeaders,
+                });
+            }).catch(() => fetch(event.request)) // Fallback to normal fetch
+        );
+    }
+});
