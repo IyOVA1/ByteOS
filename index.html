@@ -67,3 +67,142 @@
 </script>
 </body>
 </html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ByteOS | v1.0</title>
+    <script src="https://nextapps-de.github.io/winbox/dist/winbox.bundle.js"></script>
+    <style>
+        :root { --bg: #0a0a0a; --accent: #00ff88; --taskbar: #121212; }
+        body, html { margin: 0; padding: 0; height: 100%; background: var(--bg); color: white; font-family: 'Consolas', monospace; overflow: hidden; }
+
+        /* BOOT SEQUENCE */
+        #boot-screen { position: fixed; inset: 0; background: black; z-index: 10000; padding: 40px; display: flex; flex-direction: column; justify-content: flex-start; }
+        .boot-log { color: var(--accent); margin-bottom: 5px; font-size: 14px; display: none; }
+
+        /* DESKTOP UI */
+        #desktop { width: 100vw; height: calc(100vh - 45px); background: url('https://w.wallhaven.cc/full/85/wallhaven-85m8dy.jpg') center/cover; position: relative; }
+        #taskbar { height: 45px; background: var(--taskbar); position: absolute; bottom: 0; width: 100%; display: flex; align-items: center; padding: 0 15px; border-top: 1px solid #333; z-index: 9000; }
+        
+        /* ICONS */
+        .icon { width: 80px; text-align: center; cursor: pointer; padding: 10px; border-radius: 8px; position: absolute; transition: 0.2s; }
+        .icon:hover { background: rgba(255,255,255,0.1); }
+        .icon img { width: 45px; height: 45px; }
+        .icon span { display: block; font-size: 11px; margin-top: 5px; text-shadow: 1px 1px 2px black; }
+
+        /* TASKBAR EXTRAS */
+        #clock { margin-left: auto; font-size: 13px; color: #aaa; }
+        .start-btn { color: var(--accent); border: 1px solid var(--accent); padding: 4px 12px; cursor: pointer; margin-right: 20px; }
+
+        /* APP STYLES */
+        .browser-container { display: flex; flex-direction: column; height: 100%; background: white; }
+        .url-bar { background: #eee; padding: 5px; display: flex; gap: 5px; }
+        .url-bar input { flex: 1; border: 1px solid #ccc; padding: 4px; border-radius: 4px; }
+        .vault-item { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #333; cursor: pointer; }
+        .vault-item:hover { background: #222; }
+    </style>
+</head>
+<body>
+
+<div id="boot-screen">
+    <div class="boot-log">>> BYTESYSTEM BIOS V1.0.26...</div>
+    <div class="boot-log">>> MEMORY CHECK: 8GB RAM OK.</div>
+    <div class="boot-log">>> MOUNTING VIRTUAL_FILE_SYSTEM...</div>
+    <div class="boot-log">>> INITIALIZING BYTETRANSIT PROXY...</div>
+    <div class="boot-log">>> KERNEL LOADED. STARTING INTERFACE...</div>
+</div>
+
+<div id="desktop">
+    <div class="icon" style="top:20px; left:20px;" onclick="openVault()">
+        <img src="https://cdn-icons-png.flaticon.com/512/3767/3767084.png" alt="Vault">
+        <span>The Vault</span>
+    </div>
+
+    <div class="icon" style="top:120px; left:20px;" onclick="openBrowser()">
+        <img src="https://cdn-icons-png.flaticon.com/512/841/841364.png" alt="Browser">
+        <span>ByteBrowser</span>
+    </div>
+</div>
+
+<div id="taskbar">
+    <div class="start-btn" onclick="alert('ByteOS v1.0\nStatus: Online')">BYTE</div>
+    <div id="clock">00:00:00</div>
+</div>
+
+<script>
+    // 1. BOOT SEQUENCE LOGIC
+    const logs = document.querySelectorAll('.boot-log');
+    let logIndex = 0;
+    function showLogs() {
+        if (logIndex < logs.length) {
+            logs[logIndex].style.display = 'block';
+            logIndex++;
+            setTimeout(showLogs, 400);
+        } else {
+            setTimeout(() => { document.getElementById('boot-screen').style.display = 'none'; }, 800);
+        }
+    }
+    showLogs();
+
+    // 2. CLOCK
+    setInterval(() => {
+        document.getElementById('clock').innerText = new Date().toLocaleTimeString();
+    }, 1000);
+
+    // 3. VIRTUAL FILE SYSTEM (Persistence)
+    let files = JSON.parse(localStorage.getItem('byteos_files')) || [
+        { name: "NoteRaft_Stats.txt", content: "Resources: 45\nStatus: Stabilized." },
+        { name: "Project_Polaroid.json", content: '{"status": "importing_models"}' }
+    ];
+
+    // 4. APP: THE VAULT
+    function openVault() {
+        new WinBox({
+            title: "The Vault",
+            background: "#1a1a1a",
+            width: "400px", height: "300px", x: 100, y: 100,
+            html: `
+                <div style="padding:15px; color:white;">
+                    <h3>/root/vault</h3>
+                    <div id="file-list">${files.map(f => `<div class="vault-item">📄 ${f.name}</div>`).join('')}</div>
+                    <button onclick="addFile()" style="margin-top:10px; background:var(--accent); border:none; padding:5px;">+ New File</button>
+                </div>
+            `
+        });
+    }
+
+    window.addFile = () => {
+        const name = prompt("File name:");
+        if (name) {
+            files.push({ name, content: "" });
+            localStorage.setItem('byteos_files', JSON.stringify(files));
+            alert("File created in the cloud!");
+        }
+    };
+
+    // 5. APP: BYTEBROWSER (With Unblocker Logic)
+    function openBrowser() {
+        new WinBox({
+            title: "ByteBrowser",
+            background: "#222",
+            width: "80%", height: "80%", x: "center", y: "center",
+            html: `
+                <div class="browser-container">
+                    <div class="url-bar">
+                        <input type="text" id="url-input" value="https://www.wikipedia.org">
+                        <button onclick="document.getElementById('browser-frame').src = document.getElementById('url-input').value">GO</button>
+                    </div>
+                    <iframe id="browser-frame" src="https://www.wikipedia.org" style="flex:1; border:none;"></iframe>
+                </div>
+            `
+        });
+    }
+
+    // 6. SERVICE WORKER REGISTRATION (Kernel)
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js');
+    }
+</script>
+</body>
+</html>
